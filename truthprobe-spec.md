@@ -1,95 +1,118 @@
-# TruthProbe — AI Safety Layer v1.0
-## Specification Document  
-Author: Robert Hansen (Design Logic)  
-Updated: Nov 14, 2025
+# TruthProbe v1.1 — Specification  
+*A reasoning-layer utility for AI output evaluation.*
+
+## Purpose  
+Provide a portable method for evaluating AI answers by attaching a structured “TruthTail” to each response.  
+This creates an interpretability layer usable across any large language model.
+
+TruthProbe does not rely on internal model access.  
+Its structure works entirely through instruction-driven reasoning.
 
 ---
 
-## 1. Overview
-TruthProbe is a lightweight epistemic-safety layer for AI assistants.  
-It does not alter the *content* of responses — instead, it reveals what the model is doing internally:
+## Reasoning Model
 
-- How confident the model is
-- Whether the answer relies on strong evidence or weak inference
-- Whether bias or stylistic drift is influencing the output
-- Whether the AI is guessing, extrapolating, or uncertain
+TruthProbe evaluates answers using six parallel checks:
 
-TruthProbe attaches a short “Truth Tail” to every response, helping users decide when to trust the output and when to double-check.
+### 1. CertaintyLevel (0–10)
+A self-estimated heuristic score based on:
+- internal coherence  
+- commitment language (“definitely” vs “possibly”)  
+- consistency between steps  
 
-This solves the universal AI problem:
-> “I can’t tell when the AI is confident or just making something up.”
+The model is asked to score its own output after generating it.
 
 ---
 
-## 2. Design Goals
-1. **Simplicity** — install by copy/paste, no technical setup.
-2. **Portability** — works on ChatGPT, Claude, Bard, and any LLM with system instructions.
-3. **Transparency** — reveal hidden model states in a human-friendly way.
-4. **Zero interference** — TruthProbe never overrides or censors content; it only adds metadata.
-5. **Fail-gracefully** — if the model cannot assess a dimension, it declares uncertainty instead of hiding it.
+### 2. EvidenceStrength
+Categories:
+- **None** — Pure assertion  
+- **Weak** — One source of reasoning  
+- **Moderate** — Multiple supporting ideas  
+- **Strong** — Clear, multi-stage justification  
+
+Not factual correctness — just evidence structure.
 
 ---
 
-## 3. Signal Model  
-TruthProbe outputs four primary signals:
+### 3. BiasRisk
+Evaluates whether the answer:
+- frames the issue one-sidedly  
+- omits major alternative paths  
+- uses emotionally weighted or normative language  
 
-### 3.1 Confidence Level  
-Model self-assessment of correctness.  
-Values:
-- **High**
-- **Medium**
-- **Low**
-- **Speculative**
-
-Derived from:
-- semantic certainty  
-- existence of known facts  
-- clarity of the prompt  
-- latent hesitation indicators
+Outputs: Low / Moderate / High.
 
 ---
 
-### 3.2 Evidence Strength  
-How much the answer depends on:
-- verified facts  
-- known patterns  
-- extrapolation  
-- pure inference  
+### 4. AssumptionsDetected
+TruthProbe asks the model to reveal:
+- hidden premises  
+- missing definitions  
+- logical leaps  
+- unstated constraints  
 
-Values:
-- **Strong Evidence**
-- **Moderate Evidence**
-- **Weak Evidence**
-- **No Evidence (Inference)**
+This gives the user insight into *why* the model answered the way it did.
 
 ---
 
-### 3.3 Bias Risk  
-Detects whether stylistic or ideological drift may have influenced the output.
+### 5. FactVulnerability
+Signals domains where hallucination rates are historically higher:
+- medical  
+- legal  
+- statistics  
+- finance  
+- history  
+- scientific claims without citations  
 
-Values:
-- **Low Bias**
-- **Medium Bias**
-- **High Bias**
-
-Sources include:
-- overly confident tone  
-- political/cultural markers  
-- subjective framing  
-- emotionally-influenced language  
+Outputs: Low / Moderate / High.
 
 ---
 
-### 3.4 Uncertainty Notes  
-A one-line human-readable explanation of *why* the output might be unstable.
+### 6. CorrectionNeeded
+TruthProbe flags whether the user should double-check:
+- reasoning gaps  
+- overconfidence  
+- weak assumptions  
+- high-risk domains  
 
-Examples:
-- “Reasoning required to fill in missing facts.”
-- “Topic is ambiguous or under-specified.”
-- “Answer depends on assumptions not stated in the prompt.”
+Outputs:
+- **Yes: <reason>**  
+- **No**  
 
 ---
 
-## 4. Truth Tail Format  
-Every response ends with:
+## TruthTail Format (v1.1)
+[TruthTail]
+CertaintyLevel: X/10
+EvidenceStrength: <None|Weak|Moderate|Strong>
+BiasRisk: <Low|Moderate|High>
+AssumptionsDetected: <list or "None">
+FactVulnerability: <Low|Moderate|High>
+CorrectionNeeded: <Yes|No> (+ reason if Yes)
+[/TruthTail]
 
+---
+
+## Design Philosophy
+TruthProbe follows three principles:
+
+### 1. *Interpretability should be universal.*  
+Any model, any skill level, any domain.
+
+### 2. *Evaluation must be lightweight.*  
+No complex code. No custom backend.
+
+### 3. *Transparency should be user-readable.*  
+Humans deserve to understand when AI is guessing.
+
+---
+
+## Integration Notes  
+TruthProbe can be layered with:
+- custom modes  
+- memory anchoring  
+- workflow agents  
+- decision-assist systems  
+
+It is intentionally small so that it can fit anywhere.
