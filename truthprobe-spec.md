@@ -1,118 +1,96 @@
-# TruthProbe v1.1 — Specification  
-*A reasoning-layer utility for AI output evaluation.*
+# TruthProbe Specification (v1.2)
 
-## Purpose  
-Provide a portable method for evaluating AI answers by attaching a structured “TruthTail” to each response.  
-This creates an interpretability layer usable across any large language model.
-
-TruthProbe does not rely on internal model access.  
-Its structure works entirely through instruction-driven reasoning.
+TruthProbe is the public-stable reasoning transparency module for SynCE.  
+It evaluates model-generated answers and emits a structured TruthTail with  
+interpretable confidence, evidence, risk, and integrity signals.
 
 ---
 
-## Reasoning Model
+## 1. Purpose
 
-TruthProbe evaluates answers using six parallel checks:
+TruthProbe provides:
+- predictable, structured reasoning transparency  
+- machine-readable audit signals  
+- lightweight evaluation without rewriting answers  
+- safety signals that integrate into SynCE Runtime  
 
-### 1. CertaintyLevel (0–10)
-A self-estimated heuristic score based on:
-- internal coherence  
-- commitment language (“definitely” vs “possibly”)  
-- consistency between steps  
-
-The model is asked to score its own output after generating it.
+TruthProbe is designed to be model-agnostic and can run on any LLM.
 
 ---
 
-### 2. EvidenceStrength
-Categories:
-- **None** — Pure assertion  
-- **Weak** — One source of reasoning  
-- **Moderate** — Multiple supporting ideas  
-- **Strong** — Clear, multi-stage justification  
+## 2. TruthTail Design
 
-Not factual correctness — just evidence structure.
+The TruthTail captures seven key evaluation signals:
 
----
+- **CertaintyLevel (0–10)** — stability of the model's answer  
+- **EvidenceStrength** — None → Strong  
+- **BiasRisk** — likelihood of biased framing  
+- **AssumptionsDetected** — implicit statements not grounded in the answer  
+- **TopicRisk** — sensitivity or domain hazard level  
+- **FactVulnerability** — how often models hallucinate on this topic  
+- **CorrectionNeeded** — whether the answer materially fails  
 
-### 3. BiasRisk
-Evaluates whether the answer:
-- frames the issue one-sidedly  
-- omits major alternative paths  
-- uses emotionally weighted or normative language  
-
-Outputs: Low / Moderate / High.
+All values are deterministic text enums to support downstream tooling.
 
 ---
 
-### 4. AssumptionsDetected
-TruthProbe asks the model to reveal:
-- hidden premises  
-- missing definitions  
-- logical leaps  
-- unstated constraints  
+## 3. Operating Principles
 
-This gives the user insight into *why* the model answered the way it did.
-
----
-
-### 5. FactVulnerability
-Signals domains where hallucination rates are historically higher:
-- medical  
-- legal  
-- statistics  
-- finance  
-- history  
-- scientific claims without citations  
-
-Outputs: Low / Moderate / High.
+TruthProbe must:
+- evaluate only the existing answer  
+- avoid adding facts or corrections unless required  
+- remain emotionally neutral  
+- avoid assuming user intent  
+- follow SynCE governance (GR-007, GR-008, CAP)  
 
 ---
 
-### 6. CorrectionNeeded
-TruthProbe flags whether the user should double-check:
-- reasoning gaps  
-- overconfidence  
-- weak assumptions  
-- high-risk domains  
+## 4. Mode Behavior Requirements
 
-Outputs:
-- **Yes: <reason>**  
-- **No**  
+TruthProbe operates as a two-step program:
+
+1. Generate the assistant’s normal answer.  
+2. Evaluate that answer using the v1.2 TruthTail schema.  
+
+TruthProbe may not:
+- rewrite the answer  
+- fill in missing information  
+- assume correctness  
+- persuade or moralize  
 
 ---
 
-## TruthTail Format (v1.1)
+## 5. TruthTail Specification
+```
 [TruthTail]
 CertaintyLevel: X/10
-EvidenceStrength: <None|Weak|Moderate|Strong>
-BiasRisk: <Low|Moderate|High>
+EvidenceStrength: None | Weak | Moderate | Strong
+BiasRisk: Low | Moderate | High
 AssumptionsDetected: <list or "None">
-FactVulnerability: <Low|Moderate|High>
-CorrectionNeeded: <Yes|No> (+ reason if Yes)
+TopicRisk: Low | Moderate | High
+FactVulnerability: Low | Moderate | High
+CorrectionNeeded: Yes | No (+ reason if Yes)
 [/TruthTail]
+```
 
 ---
 
-## Design Philosophy
-TruthProbe follows three principles:
+## 6. Integration Points
 
-### 1. *Interpretability should be universal.*  
-Any model, any skill level, any domain.
+TruthProbe integrates with:
+- SynCE Runtime (L5)
+- Audit systems
+- Evaluation harnesses
+- Tooling pipelines
+- LLM interfaces
 
-### 2. *Evaluation must be lightweight.*  
-No complex code. No custom backend.
-
-### 3. *Transparency should be user-readable.*  
-Humans deserve to understand when AI is guessing.
+TruthProbe emits purely analytical metadata and is safe for all contexts.
 
 ---
 
-## Integration Notes  
-TruthProbe can be layered with:
-- custom modes  
-- memory anchoring  
-- workflow agents  
-- decision-assist systems  
+## 7. Versioning
 
-It is intentionally small so that it can fit anywhere.
+v1.2 — Public stable  
+All experimental versions appear only in EDEN.
+
+End of spec.
